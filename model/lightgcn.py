@@ -38,7 +38,7 @@ class LightGCN(BaseModel):
         embeds = t.concat([self.user_embeds, self.item_embeds], axis=0)
         embeds_list = [embeds]
         if self.is_training:
-            adj = self.node_dropper(adj, keep_rate)
+            # adj = self.node_dropper(adj, keep_rate)
             adj = self.edge_dropper(adj, keep_rate)
         for i in range(self.layer_num):
             embeds = self._propagate(adj, embeds_list[-1])
