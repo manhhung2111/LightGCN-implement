@@ -3,18 +3,15 @@ from torch import nn
 from model.aug_utils import EdgeDrop, NodeDrop
 from config.configurator import configs
 from model.loss_utils import cal_bpr_loss, reg_params
+from model.base_model import BaseModel
 
 init = nn.init.xavier_uniform_
 uniformInit = nn.init.uniform
 
-class LightGCN(nn.Module):
+
+class LightGCN(BaseModel):
     def __init__(self, data_handler):
         super(LightGCN, self).__init__(data_handler)
-        
-        # basic hyperparams
-        self.user_num = configs['data']['user_num']
-        self.item_num = configs['data']['item_num']
-        self.embedding_size = configs['model']['embedding_size']
 
         self.adj = data_handler.torch_adj
 
@@ -22,17 +19,19 @@ class LightGCN(nn.Module):
         self.reg_weight = configs['model']['reg_weight']
         self.keep_rate = configs['model']['keep_rate']
 
-        self.user_embeds = nn.Parameter(init(t.empty(self.user_num, self.embedding_size)))
-        self.item_embeds = nn.Parameter(init(t.empty(self.item_num, self.embedding_size)))
+        self.user_embeds = nn.Parameter(
+            init(t.empty(self.user_num, self.embedding_size)))
+        self.item_embeds = nn.Parameter(
+            init(t.empty(self.item_num, self.embedding_size)))
 
         self.edge_dropper = EdgeDrop()
         self.node_dropper = NodeDrop()
         self.is_training = True
         self.final_embeds = None
-    
+
     def _propagate(self, adj, embeds):
         return t.spmm(adj, embeds)
-    
+
     def forward(self, adj, keep_rate):
         if not self.is_training and self.final_embeds is not None:
             return self.final_embeds[:self.user_num], self.final_embeds[self.user_num:]
@@ -44,10 +43,10 @@ class LightGCN(nn.Module):
         for i in range(self.layer_num):
             embeds = self._propagate(adj, embeds_list[-1])
             embeds_list.append(embeds)
-        embeds = sum(embeds_list)# / len(embeds_list)
+        embeds = sum(embeds_list)  # / len(embeds_list)
         self.final_embeds = embeds
         return embeds[:self.user_num], embeds[self.user_num:]
-    
+
     def cal_loss(self, batch_data):
         self.is_training = True
         user_embeds, item_embeds = self.forward(self.adj, self.keep_rate)
@@ -55,7 +54,8 @@ class LightGCN(nn.Module):
         anc_embeds = user_embeds[ancs]
         pos_embeds = item_embeds[poss]
         neg_embeds = item_embeds[negs]
-        bpr_loss = cal_bpr_loss(anc_embeds, pos_embeds, neg_embeds) / anc_embeds.shape[0]
+        bpr_loss = cal_bpr_loss(anc_embeds, pos_embeds,
+                                neg_embeds) / anc_embeds.shape[0]
         reg_loss = self.reg_weight * reg_params(self)
         loss = bpr_loss + reg_loss
         losses = {'bpr_loss': bpr_loss, 'reg_loss': reg_loss}
