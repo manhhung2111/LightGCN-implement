@@ -13,7 +13,7 @@ from copy import deepcopy
 import torch.optim as optim
 from trainer.metrics import Metric
 from config.configurator import configs
-from model.bulid_model import build_model
+from model.build_model import build_model
 from torch.utils.tensorboard import SummaryWriter
 from .utils import DisabledSummaryWriter, log_exceptions
 
