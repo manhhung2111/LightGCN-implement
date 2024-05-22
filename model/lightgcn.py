@@ -36,6 +36,7 @@ class LightGCN(BaseModel):
         if not self.is_training and self.final_embeds is not None:
             return self.final_embeds[:self.user_num], self.final_embeds[self.user_num:]
         embeds = t.concat([self.user_embeds, self.item_embeds], axis=0)
+        embeds = self.node_dropper(embeds, keep_rate)
         embeds_list = [embeds]
         if self.is_training:
             # adj = self.node_dropper(adj, keep_rate)

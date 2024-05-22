@@ -46,5 +46,5 @@ class NodeDrop(nn.Module):
         if keep_rate == 1.0: return embeds
         data_config = configs['data']
         node_num = data_config['user_num'] + data_config['item_num']
-        mask = (t.rand(node_num) + keep_rate).floor().view([-1, 1])
+        mask = (t.rand(node_num) + keep_rate).floor().view([-1, 1]).to(configs['device'])
         return embeds * mask
